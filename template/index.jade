@@ -1,0 +1,46 @@
+html
+  head
+    link(rel='icon' href='app/editor/static/preview-templates/favicon.ico')
+    meta(charset='utf-8')
+    title=title
+    meta(name='viewport' content='width=device-width,user-scalable=no,initial-scale=1, minimum-scale=1,maximum-scale=1')
+    meta(name='apple-mobile-web-app-capable' content='yes')
+    meta(name='full-screen' content='yes')
+    meta(name='screen-orientation' content='portrait')
+    meta(name='x5-fullscreen' content='true')
+    meta(name='360-fullscreen' content='true')
+    
+    meta(name='renderer' content='webkit')
+    meta(name='force-rendering' content='webkit')
+    meta(http-equiv='X-UA-Compatible' content='IE=edge,chrome=1')
+
+    link(rel='stylesheet' href='res/style.css')
+
+  body
+    include ./template/toolbar.jade
+
+    div.content#content
+      div.wrapper#GameDiv
+        canvas#GameCanvas
+
+        div#splash
+          div.progress-bar.stripes
+            span
+        div#bulletin
+          div.inner#sceneIsEmpty= tip_sceneIsEmpty
+
+    script(type='text/javascript' charset='utf-8' src='#{settings}')
+    script(type='text/javascript').
+      _CCSettings.libraryPath = '#{libraryPath}';
+      _CCSettings.rawAssetsBase = '#{rawAssetsBase}';
+      _CCSettings['preview-scene.json'] = '#{previewScene}';
+      _CCSettings.appPath = '#{appPath}';
+      _CCSettings.assetPath = '#{assetPath}';
+      _CCSettings.projectPath = '#{projectPath}';
+
+    script(type='text/javascript').
+      require('./scripts/module');
+      require('./scripts/init');
+      require('#{engine}');
+
+    script(type='text/javascript' charset='utf-8' src='scripts/boot.js')
