@@ -261,75 +261,60 @@
         // init engine
         // =======================
 
-        var engineInited = false;
-
         if (isFullScreen()) {
             window.addEventListener('resize', updateResolution);
         }
 
-        var AssetOptions = {
-            libraryPath: _CCSettings.libraryPath,
-            rawAssetsBase: _CCSettings.rawAssetsBase,
-            rawAssets: _CCSettings.rawAssets
-        };
-
-        // jsList
-        var jsList = _CCSettings.jsList || [];
-        jsList = jsList.map(function (x) { return AssetOptions.rawAssetsBase + x; });
-
         var option = {
             id: canvas,
-            scenes: _CCSettings.scenes,
             renderMode: parseInt(optsRenderMode.value),
             debugMode: parseInt(optsDebugMode.value),
             showFPS: Array.prototype.indexOf.call(btnShowFPS.classList, 'checked') !== -1,
             frameRate: parseInt(inputSetFPS.value),
-            groupList: _CCSettings.groupList,
-            collisionMatrix: _CCSettings.collisionMatrix,
-            jsList: jsList
-            // rawUrl: _CCSettings.rawUrl
         };
 
-        cc.game.run(option, function () {
-            var Path = require('path');
-            
-            require(Path.join(__dirname, 'scripts/director.js'));
-            // require(Path.join(__dirname, 'scripts/src.js'));
 
-            // resize canvas
-            if (!isFullScreen()) {
-                updateResolution();
-            }
-            // UC browser on many android devices have performance issue with retina display
-            if (cc.sys.os !== cc.sys.OS_ANDROID || cc.sys.browserType !== cc.sys.BROWSER_TYPE_UC) {
-                cc.view.enableRetina(true);
-            }
-            
-            cc.director.setDisplayStats(true);
-        
-            // Loading splash scene
-            var splash = document.getElementById('splash');
-            var progressBar = splash.querySelector('.progress-bar span');
-            showSplash();
-
-            cc.director.once(cc.Director.EVENT_AFTER_SCENE_LAUNCH, function () {
-                splash.style.display = 'none';
-                checkEmptyScene();
-            });
+        window.reloadScene = function () {
+            const Async = require('async');
 
             cc.game.pause();
 
-            // init assets
-            cc.AssetLibrary.init(AssetOptions);
-            engineInited = true;
-
-            window.reloadScene = function () {
-
+            let AssetOptions;
+            Async.series([
                 // clear web cache
-                // var Electron = require('electron'); 
-                // var win = Electron.remote.getCurrentWindow();
-                // win.webContents.session.clearCache(function(){
-                    
+                function (next) {
+                    // var Electron = require('electron'); 
+                    // var win = Electron.remote.getCurrentWindow();
+                    // win.webContents.session.clearCache(next);
+                    next();
+                },
+
+                // load CCSettings
+                function (next) {
+                    qp.loadScript(_Settings.CCSettings, next);
+                },
+
+                function (next) {
+                    qp.loadPlugins(next);
+                },
+
+                function (next) {
+                    cc.game._sceneInfos = _CCSettings.scenes;
+                    cc.game.collisionMatrix = _CCSettings.collisionMatrix;
+                    cc.game.groupList = _CCSettings.groupList;
+
+                    next();
+                },
+
+                function (next) {
+                    // init assets
+                    AssetOptions = {
+                        libraryPath: _Settings.libraryPath,
+                        rawAssetsBase: _Settings.rawAssetsBase,
+                        rawAssets: _CCSettings.rawAssets
+                    };
+                    cc.AssetLibrary.init(AssetOptions);
+
                     // clear loader cache
                     // cc.loader.clear();
                     cc.director.reset();
@@ -341,12 +326,31 @@
                         cc.game.removePersistRootNode(nodes[name]);
                     }
 
+                    next();
+                },
+
+                function (next) {
+                    qp.init();
+                    next();
+                },
+
+                function (next) {
                     // load stashed scene
-                    cc.loader.load(_CCSettings['preview-scene.json'], function (error, json) {
+                    cc.loader.load(_Settings['preview-scene.json'], function (error, json) {
                         if (error) {
                             cc.error(error.stack);
                             return;
                         }
+
+                        // Loading splash scene
+                        var splash = document.getElementById('splash');
+                        var progressBar = splash.querySelector('.progress-bar span');
+                        showSplash();
+
+                        cc.director.once(cc.Director.EVENT_AFTER_SCENE_LAUNCH, function () {
+                            splash.style.display = 'none';
+                            checkEmptyScene();
+                        });
 
                         cc.loader.onProgress = function (completedCount, totalCount, item) {
                             var percent = 100 * completedCount / totalCount;
@@ -369,11 +373,29 @@
                                 });
 
                                 cc.loader.onProgress = null;
+                                next();
                             }
                         );
                     });
-                // });
-            };
+                }
+            ]);
+        };
+
+        cc.game.run(option, function () {
+            var Path = require('path');
+            
+            require(Path.join(__dirname, 'scripts/engine.js'));
+
+            // resize canvas
+            if (!isFullScreen()) {
+                updateResolution();
+            }
+            // UC browser on many android devices have performance issue with retina display
+            if (cc.sys.os !== cc.sys.OS_ANDROID || cc.sys.browserType !== cc.sys.BROWSER_TYPE_UC) {
+                cc.view.enableRetina(true);
+            }
+            
+            cc.director.setDisplayStats(true);
 
             reloadScene();
 

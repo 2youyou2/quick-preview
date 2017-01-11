@@ -20,6 +20,8 @@ function reload () {
 
 function unregisterPathClass (path) {
   let name = Path.basenameNoExt(path);
+  if (!qp.modules[name]) return;
+
   let cls = cc.js.getClassByName( name );
   if (cls) {
     cc.js.unregisterClass( cls );
@@ -31,6 +33,7 @@ function unregisterPathClass (path) {
 
 function registerPathClass (path) {
   let module = qp._addModule(path);
+  if (!module) return;
 
   try {
     module.module = require(path);
@@ -81,7 +84,7 @@ window.qp = {
   modules: {},
   
   _updateModules: function (cb) {
-    let pattern = Path.join(_CCSettings.tmpScriptPath, '**/*.js');
+    let pattern = Path.join(_Settings.tmpScriptPath, '**/*.js');
 
     Globby.sync(pattern)
       .forEach(path => {
@@ -94,6 +97,14 @@ window.qp = {
   _addModule: function (path) {
     let name = Path.basenameNoExt(path);
     let module = this.modules[name];
+
+    if (qp.plugins.indexOf(name) !== -1) {
+      if (module) {
+        this.unregisterPathClass(module.path);
+      }
+      return null;
+    }
+
     if (!module) {
       module = this.modules[name] = {
         name: name,
@@ -110,13 +121,13 @@ window.qp = {
 
     const Chokidar = require('chokidar');
 
-    watcher = Chokidar.watch(Path.join(_CCSettings.assetPath, '**/*.js'), {
+    watcher = Chokidar.watch(Path.join(_Settings.assetPath, '**/*.js'), {
       ignoreInitial: true
     });
     
     watcher.on('all', (event, path) => {
       let src = path;
-      let dst = Path.join(_CCSettings.tmpScriptPath, 'assets', Path.relative(_CCSettings.assetPath, path));
+      let dst = Path.join(_Settings.tmpScriptPath, 'assets', Path.relative(_Settings.assetPath, path));
 
       if (event === 'change') {
         ipcRenderer.send('generate-src-file', src, dst);
@@ -131,7 +142,10 @@ window.qp = {
     });
   },
 
-  _init: function () {
+  init: function () {
+    if (this._inited) return;
+    this._inited = true;
+
     qp._updateModules();
 
     for (let name in this.modules) {
@@ -139,6 +153,51 @@ window.qp = {
     }
 
     qp._watch();
+  },
+
+  loadScript: function (src, callback) {
+      var timer = 'load ' + src;
+      var scriptElement = document.createElement('script');
+
+      function done() {
+          console.timeEnd(timer);
+          // deallocation immediate whatever
+          scriptElement.remove();
+      }
+
+      scriptElement.onload = function () {
+          done();
+          callback();
+      };
+      scriptElement.onerror = function () {
+          done();
+          var error = 'Failed to load ' + src;
+          console.error(error);
+          callback(new Error(error));
+      };
+      scriptElement.setAttribute('type','text/javascript');
+      scriptElement.setAttribute('charset', 'utf-8');
+      scriptElement.setAttribute('src', src);
+
+      console.time(timer);
+      document.head.appendChild(scriptElement);
+  },
+
+  loadPlugins: function (cb) {
+    // jsList
+    var jsList = _CCSettings.jsList || [];
+    jsList = jsList.map(function (x) { return _Settings.rawAssetsBase + x; });
+
+    this.plugins = jsList.map(path => {
+      return Path.basenameNoExt(path);
+    });
+    
+    let originModule = window.module;
+    window.module = null;
+    cc.loader.load(jsList, function () {
+        window.module = originModule;
+        if (cb) cb();    
+    });
   },
 
   _moduleStack: [],
@@ -158,5 +217,3 @@ window.qp = {
     cc._RFpop.apply(cc._RFpush, arguments);
   }
 };
-
-qp._init();

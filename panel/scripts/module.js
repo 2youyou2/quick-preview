@@ -23,8 +23,6 @@ Module._load = function (request, parent, isMain) {
   let exports = originLoad.apply(Module, arguments);
 
   if (window.qp && qp.modules) {
-    
-
     let parentName = basenameNoExt(parent.filename);
     let parentModule = qp.modules[parentName];
     if (!parentModule) {
@@ -49,14 +47,15 @@ Module._load = function (request, parent, isMain) {
 };
 
 // reimplement Module._nodeModulePaths
-let appPaths = Module._nodeModulePaths( _CCSettings.appPath );
-let originNodeModulePaths = Module._nodeModulePaths;
-Module._nodeModulePaths = function () {
-  let paths = originNodeModulePaths.apply(Module, arguments);
+let appPaths = Module._nodeModulePaths( _Settings.appPath );
+let originResolveLookupPaths = Module._resolveLookupPaths;
+Module._resolveLookupPaths = function () {
+  let resolvedModule = originResolveLookupPaths.apply(Module, arguments);
+  let paths = resolvedModule[1];
   appPaths.forEach(path => {
     if (paths.indexOf(path) === -1) {
       paths.push(path);
     }
   });
-  return paths;
+  return resolvedModule;
 };

@@ -6,10 +6,12 @@
   "main": "main.js",
   "main-menu": {
     "i18n:MAIN_MENU.package.title/quick-preview/open": {
-      "message": "quick-preview:open"
+      "message": "quick-preview:open",
+      "accelerator": "CmdOrCtrl+Shift+O"
     },
-    "i18n:MAIN_MENU.package.title/quick-preview/hello": {
-      "message": "quick-preview:say-hello"
+    "i18n:MAIN_MENU.package.title/quick-preview/reload": {
+      "message": "quick-preview:reload",
+      "accelerator": "CmdOrCtrl+Shift+R"
     }
   }
 }

@@ -29,15 +29,16 @@ html
         div#bulletin
           div.inner#sceneIsEmpty= tip_sceneIsEmpty
 
-    script(type='text/javascript' charset='utf-8' src='#{settings}')
     script(type='text/javascript').
-      _CCSettings.libraryPath = '#{libraryPath}';
-      _CCSettings.rawAssetsBase = '#{rawAssetsBase}';
-      _CCSettings['preview-scene.json'] = '#{previewScene}';
-      _CCSettings.appPath = '#{appPath}';
-      _CCSettings.assetPath = '#{assetPath}';
-      _CCSettings.projectPath = '#{projectPath}';
-      _CCSettings.tmpScriptPath = '#{tmpScriptPath}';
+      _Settings = {};
+      _Settings.CCSettings = '#{settings}';
+      _Settings.libraryPath = '#{libraryPath}';
+      _Settings.rawAssetsBase = '#{rawAssetsBase}';
+      _Settings['preview-scene.json'] = '#{previewScene}';
+      _Settings.appPath = '#{appPath}';
+      _Settings.assetPath = '#{assetPath}';
+      _Settings.projectPath = '#{projectPath}';
+      _Settings.tmpScriptPath = '#{tmpScriptPath}';
 
     script(type='text/javascript').
       

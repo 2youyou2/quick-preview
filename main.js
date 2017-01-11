@@ -146,12 +146,14 @@ module.exports = {
   unload () {
   },
 
-  // register your ipc messages here
   messages: {
     'open' () {
-      // open entry panel registered in package.json
-      
       openWindow();
+    },
+    'reload' () {
+      if (win) {
+        win.loadURL( url(Path.join(__dirname, 'panel/index.html')) );
+      }
     }
   },
 };
