@@ -1,29 +1,18 @@
 'use strict';
 
-// quick preview
-window.qp = {
-  srcList: [],
-  nameList: []
-};
-
 const ipcRenderer = require('electron').ipcRenderer;
 const Path = require('fire-path');
-
-// init window
-window.onbeforeunload = function (e) {
-  // const electron = require('electron');
-  // electron.ipcRenderer.sendSync('before-unload');
-};
-
-window.CC_DEV = true;
-
+const Globby = require('globby');
 
 // reload
+let errorList = [];
 let reloadTimeoutId;
 function reload () {
   if (!reloadTimeoutId) {
     reloadTimeoutId = setTimeout(() => {
-      window.reloadScene();
+      if (errorList.length === 0) {
+        window.reloadScene();
+      }
       reloadTimeoutId = null;
     }, 100);
   }
@@ -37,22 +26,45 @@ function unregisterPathClass (path) {
   }
 
   delete require.cache[path];
-
-  cc.js.array.remove(qp.srcList, path);
-  cc.js.array.remove(qp.nameList, name);
+  delete qp.modules[name];
 }
 
 function registerPathClass (path) {
-  require(path);
+  let module = qp._addModule(path);
 
-  qp.srcList.push(path);
-  qp.nameList.push(Path.basenameNoExt(path));
+  try {
+    module.module = require(path);
+    cc.js.array.remove(errorList, path);
+  }
+  catch(err) {
+    errorList.push(path);
+    unregisterPathClass(path);
+    console.error(err);
+  } 
+}
+
+function reregisterParentModules (module) {
+  if (!module) return;
+
+  for (let i = 0; i < module.parents.length; i++) {
+    let parentModule = module.parents[i];
+    let parentPath = parentModule.path;
+    unregisterPathClass(parentPath);
+    registerPathClass(parentPath);
+
+    reregisterParentModules(parentModule);
+  }
 }
 
 // ipc messages
 ipcRenderer.on('generate-src-file-complete', (event, src, dst) => {
+  let name = Path.basenameNoExt(dst);
+  let module = qp.modules[name];
+
   unregisterPathClass(dst);
   registerPathClass(dst);
+
+  reregisterParentModules(module);
 
   reload();
 });
@@ -61,47 +73,90 @@ ipcRenderer.on('reload-scene', () => {
   reload();
 });
 
-// watch asset path
+
 let watcher;
-function watch () {
-  if (watcher) return;
 
-  const Chokidar = require('chokidar');
-
-  watcher = Chokidar.watch(Path.join(_CCSettings.assetPath, '**/*.js'), {
-    ignoreInitial: true
-  });
+// quick preview
+window.qp = {
+  modules: {},
   
-  watcher.on('all', (event, path) => {
-    let src = path;
-    let dst = Path.join(_CCSettings.projectPath, 'temp/scripts/assets', Path.relative(_CCSettings.assetPath, path));
+  _updateModules: function (cb) {
+    let pattern = Path.join(_CCSettings.tmpScriptPath, '**/*.js');
 
-    if (event === 'change') {
-      ipcRenderer.send('generate-src-file', src, dst);
-    }
-    else if (event === 'add') {
-      ipcRenderer.send('generate-src-file', src, dst);
-    }
-    else if (event === 'unlink') {
-      unregisterPathClass(dst);
-    }
-  });
-}
+    Globby.sync(pattern)
+      .forEach(path => {
+        path = Path.normalize(path);
+        this._addModule(path);
+      }
+    );
+  },
 
-qp.initSrcList = function (list) {
-  qp.srcList = list;
-  qp.nameList = qp.srcList.map(path => {
-    return Path.basenameNoExt(path);
-  });
-
-  watch();
-
-  qp.srcList.forEach(path => {
-    try {
-      require(path);
+  _addModule: function (path) {
+    let name = Path.basenameNoExt(path);
+    let module = this.modules[name];
+    if (!module) {
+      module = this.modules[name] = {
+        name: name,
+        path: path,
+        parents: []
+      };
     }
-    catch (err) {
-      console.error(err.stack);
+
+    return module;
+  },
+
+  _watch: function () {
+    if (watcher) return;
+
+    const Chokidar = require('chokidar');
+
+    watcher = Chokidar.watch(Path.join(_CCSettings.assetPath, '**/*.js'), {
+      ignoreInitial: true
+    });
+    
+    watcher.on('all', (event, path) => {
+      let src = path;
+      let dst = Path.join(_CCSettings.tmpScriptPath, 'assets', Path.relative(_CCSettings.assetPath, path));
+
+      if (event === 'change') {
+        ipcRenderer.send('generate-src-file', src, dst);
+      }
+      else if (event === 'add') {
+        qp._updateModules();
+        ipcRenderer.send('generate-src-file', src, dst);
+      }
+      else if (event === 'unlink') {
+        unregisterPathClass(dst);
+      }
+    });
+  },
+
+  _init: function () {
+    qp._updateModules();
+
+    for (let name in this.modules) {
+      registerPathClass(this.modules[name].path);
     }
-  });
+
+    qp._watch();
+  },
+
+  _moduleStack: [],
+  _RFpush: function (module) {
+    let stack = this._moduleStack;
+    if (stack.length > 0) {
+      module.ccParent = stack[stack.length - 1];
+    }
+    stack.push(module);
+
+    cc._RFpush.apply(cc._RFpush, arguments);
+  },
+
+  _RFpop: function (module) {
+    this._moduleStack.pop();
+
+    cc._RFpop.apply(cc._RFpush, arguments);
+  }
 };
+
+qp._init();

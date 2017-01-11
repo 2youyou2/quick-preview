@@ -37,10 +37,14 @@ html
       _CCSettings.appPath = '#{appPath}';
       _CCSettings.assetPath = '#{assetPath}';
       _CCSettings.projectPath = '#{projectPath}';
+      _CCSettings.tmpScriptPath = '#{tmpScriptPath}';
 
     script(type='text/javascript').
+      
+      window.CC_DEV = true;
+      require('#{engine}');
+
       require('./scripts/module');
       require('./scripts/init');
-      require('#{engine}');
 
     script(type='text/javascript' charset='utf-8' src='scripts/boot.js')

@@ -67,6 +67,7 @@
     var optsDebugMode = document.getElementById('opts-debug-mode');
     var btnShowFPS = document.getElementById('btn-show-fps');
     var inputSetFPS = document.getElementById('input-set-fps');
+    var btnReload = document.getElementById('btn-reload');
 
     devices.forEach( function ( info, idx ) {
         var opt = document.createElement('option');
@@ -227,6 +228,11 @@
             refreshPauseBtnState();
         });
 
+        // init reload button
+        btnReload.addEventListener('click', function () {
+            window.reloadScene();
+        });
+
         // init step button
         btnStep.addEventListener('click', function () {
             cc.game.step();
@@ -286,7 +292,9 @@
 
         cc.game.run(option, function () {
             var Path = require('path');
-            require(Path.join(__dirname, 'scripts/src.js'));
+            
+            require(Path.join(__dirname, 'scripts/director.js'));
+            // require(Path.join(__dirname, 'scripts/src.js'));
 
             // resize canvas
             if (!isFullScreen()) {
