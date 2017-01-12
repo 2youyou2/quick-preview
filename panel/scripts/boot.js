@@ -1,6 +1,8 @@
 (function () {
     'use strict';
 
+    require('electron-cookies');
+
     // init device resolutions
     var devices = [
         { name: 'Apple iPad', width: 1024, height: 768, ratio: 2 },
@@ -79,7 +81,7 @@
         days = days || 30;              //cookie will be saved for 30 days
         var expires  = new Date();
         expires.setTime(expires.getTime() + days*24*60*60*1000);
-        document.cookie = name + '='+ encodeURIComponent(value) + ';expires=' + expires.toGMTString();
+        document.cookie = name + '='+ encodeURIComponent(value);// + ';expires=' + expires.toGMTString();
     }
 
     function getCookie (name) {
@@ -296,7 +298,7 @@
                     }
 
                     showSplash();
-                    
+
                     next();
                 },
 

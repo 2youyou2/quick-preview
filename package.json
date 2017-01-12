@@ -13,5 +13,8 @@
       "message": "quick-preview:reload",
       "accelerator": "CmdOrCtrl+Shift+R"
     }
+  },
+  "dependencies": {
+    "electron-cookies": "^1.1.0"
   }
 }
