@@ -53,9 +53,6 @@
     // init toolbar
     // =======================
 
-    var designWidth = _CCSettings.designWidth;
-    var designHeight = _CCSettings.designHeight;
-
     var rotated = false;
     // var paused = false;
     var canvas = document.getElementById('GameCanvas');
@@ -100,8 +97,8 @@
         var w, h;
         var idx = optsDevice.value;
         if ( idx === '0' ) {
-            w = designWidth;
-            h = designHeight;
+            w = _CCSettings.designWidth;
+            h = _CCSettings.designHeight;
         }
         else {
             var info = devices[parseInt(idx) - 1];
@@ -161,8 +158,6 @@
         optsDebugMode.value = getCookie('debugMode') || '1';
         setCSSChecked(btnShowFPS, getCookie('showFPS') === 'true');
         inputSetFPS.value = '60';
-
-        showSplash();
     }
 
     initPreviewOptions();
@@ -295,6 +290,17 @@
                 },
 
                 function (next) {
+                    // resize canvas
+                    if (!isFullScreen()) {
+                        updateResolution();
+                    }
+
+                    showSplash();
+                    
+                    next();
+                },
+
+                function (next) {
                     qp.loadPlugins(next);
                 },
 
@@ -345,7 +351,6 @@
                         // Loading splash scene
                         var splash = document.getElementById('splash');
                         var progressBar = splash.querySelector('.progress-bar span');
-                        showSplash();
 
                         cc.director.once(cc.Director.EVENT_AFTER_SCENE_LAUNCH, function () {
                             splash.style.display = 'none';
@@ -386,10 +391,6 @@
             
             require(Path.join(__dirname, 'scripts/engine.js'));
 
-            // resize canvas
-            if (!isFullScreen()) {
-                updateResolution();
-            }
             // UC browser on many android devices have performance issue with retina display
             if (cc.sys.os !== cc.sys.OS_ANDROID || cc.sys.browserType !== cc.sys.BROWSER_TYPE_UC) {
                 cc.view.enableRetina(true);

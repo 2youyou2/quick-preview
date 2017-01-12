@@ -6,6 +6,7 @@ const Url = require('url');
 const Jade = require('jade');
 const Globby = require('globby');
 const Fs = require('fire-fs');
+const Del = require('del');
 
 const UuidUtils = require( Editor.url('app://editor/share/editor-utils/uuid-utils') );
 
@@ -86,6 +87,7 @@ function addMetaData (src, dst) {
 }
 
 function generateSrcFiles () {
+  Del.sync(tmpScriptPath, {force: true});
   let pattern = Path.join(assetPath, '**/*.js');
 
   Globby.sync(pattern)

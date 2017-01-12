@@ -160,7 +160,7 @@ window.qp = {
       var scriptElement = document.createElement('script');
 
       function done() {
-          console.timeEnd(timer);
+          // console.timeEnd(timer);
           // deallocation immediate whatever
           scriptElement.remove();
       }
@@ -179,7 +179,7 @@ window.qp = {
       scriptElement.setAttribute('charset', 'utf-8');
       scriptElement.setAttribute('src', src);
 
-      console.time(timer);
+      // console.time(timer);
       document.head.appendChild(scriptElement);
   },
 
