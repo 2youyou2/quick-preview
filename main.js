@@ -10,8 +10,8 @@ const Del = require('del');
 
 const UuidUtils = require( Editor.url('app://editor/share/editor-utils/uuid-utils') );
 
-const assetPath = Path.join(Editor.projectPath, 'assets');
-const tmpScriptPath = Path.join(Editor.projectPath, 'temp/qp-scripts');
+const assetPath = Path.join(Editor.projectPath, 'assets').replace(/\\/g, '/');
+const tmpScriptPath = Path.join(Editor.projectPath, 'temp/qp-scripts').replace(/\\/g, '/');
 
 let urlPrefix = `http://localhost:${Editor.PreviewServer.previewPort}`;
 
@@ -27,15 +27,14 @@ function generateHtml () {
   let rawAssetsBase = `${urlPrefix}/res/raw-`;
 
   content = fn({
-    engine: Editor.url('unpack://engine'),
+    engine: Editor.url('unpack://engine').replace(/\\/g, '/'),
     settings: `${urlPrefix}/settings.js`,
-    socketio: Editor.url('unpack://engine/external/socketio/socket.io.js'),
     libraryPath: libraryPath,
     rawAssetsBase: rawAssetsBase,
     previewScene: `${urlPrefix}/preview-scene.json`,
-    appPath: Editor.App.path,
+    appPath: Editor.App.path.replace(/\\/g, '/'),
     assetPath: assetPath,
-    projectPath: Editor.projectPath,
+    projectPath: Editor.projectPath.replace(/\\/g, '/'),
     tmpScriptPath: tmpScriptPath
   });
 
