@@ -11,6 +11,7 @@ Quick Preview Plugin for CocosCreator
   Once detect file changed, Quick Preview will reload this single file and the modules depend on this module, then reload the scene.   
   This task will be done super fast.
 - Auto reload scene when save scene in editor
+- Auto reload without focus back to editor
 
 # accelerator 
 - cmd/ctrl + shift + o - open window
