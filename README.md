@@ -1,5 +1,5 @@
 # quick-preview
-Quick Preview Plugin for CocosCreator
+Quick Preview Plugin for CocosCreator 1.4+
 
 # screenshot
 ![screen](https://github.com/2youyou2/quick-preview/blob/master/screenshot/quick-preview.gif?raw=true)
