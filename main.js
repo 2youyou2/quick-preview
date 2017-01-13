@@ -143,6 +143,11 @@ Editor.App.on('quit', function () {
 
 module.exports = {
   load () {
+    Editor.Metrics.trackEvent({
+      category: 'Packages',
+      label: 'quick-preview',
+      action: 'Panel Load'
+    }, null);
   },
 
   unload () {
@@ -151,6 +156,12 @@ module.exports = {
   messages: {
     'open' () {
       openWindow();
+
+      Editor.Metrics.trackEvent({
+        category: 'Packages',
+        label: 'quick-preview',
+        action: 'Panel Open'
+      }, null);
     },
     'reload' () {
       if (win) {
