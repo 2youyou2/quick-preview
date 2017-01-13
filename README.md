@@ -1,6 +1,9 @@
 # quick-preview
 Quick Preview Plugin for CocosCreator
 
+# screenshot
+![screen](https://github.com/2youyou2/quick-preview/blob/master/screenshot/quick-preview.gif?raw=true)
+
 # feature
 - Load original engine files as modules
 - Load original project files as modules
