@@ -13,7 +13,6 @@ const UuidUtils = require( Editor.url('app://editor/share/editor-utils/uuid-util
 const assetPath = Path.join(Editor.projectPath, 'assets').replace(/\\/g, '/');
 const tmpScriptPath = Path.join(Editor.projectPath, 'temp/qp-scripts').replace(/\\/g, '/');
 
-let urlPrefix = `http://localhost:${Editor.PreviewServer.previewPort}`;
 
 function generateHtml () {
   let content = Fs.readFileSync(Path.join(__dirname, 'template/index.jade'), 'utf8');
@@ -22,6 +21,8 @@ function generateHtml () {
     filename: Path.join(__dirname, 'template'),
     pretty: true
   });
+
+  let urlPrefix = `http://localhost:${Editor.PreviewServer.previewPort}`;
 
   let libraryPath = `${urlPrefix}/res/import`;
   let rawAssetsBase = `${urlPrefix}/res/raw-`;
@@ -114,6 +115,8 @@ function openWindow () {
       devTools: true
     }
   });
+
+  win.webContents.openDevTools();
 
   win.once('closed', function () {
       win = null;
