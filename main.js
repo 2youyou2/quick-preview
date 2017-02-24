@@ -101,7 +101,10 @@ function generateSrcFiles () {
 
 let win;
 function openWindow () {
-  if (win) return;
+  if (win) {
+    win.focus();
+    return;
+  }
 
   win = new BrowserWindow({
     x: 100,
