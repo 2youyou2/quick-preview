@@ -43,9 +43,9 @@ html
     script(type='text/javascript').
       
       window.CC_DEV = true;
-      require('#{engine}');
 
       require('./scripts/module');
+      require('#{engine}');
       require('./scripts/init');
 
     script(type='text/javascript' charset='utf-8' src='scripts/boot.js')
