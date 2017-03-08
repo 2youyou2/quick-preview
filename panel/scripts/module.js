@@ -5,6 +5,14 @@ function basenameNoExt(path) {
   return Path.basename(path, Path.extname(path) );
 }
 
+let originRequire = Module.prototype.require;
+Module.prototype.require = function (path) {
+  if (path.indexOf('modular-cocos2d-cut') !== -1) {
+    return null;
+  }
+  return originRequire.apply(this, arguments);
+};
+
 // reimplement Module._findPath
 let originFindPath = Module._findPath;
 Module._findPath = function (request, paths, isMain) {
