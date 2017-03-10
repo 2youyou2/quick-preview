@@ -4,8 +4,6 @@ const ipcRenderer = require('electron').ipcRenderer;
 const Path = require('fire-path');
 const Globby = require('globby');
 
-require('source-map-support').install();
-
 // reload
 let errorList = [];
 let reloadTimeoutId;
