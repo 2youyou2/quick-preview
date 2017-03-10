@@ -4,6 +4,8 @@ const ipcRenderer = require('electron').ipcRenderer;
 const Path = require('fire-path');
 const Globby = require('globby');
 
+require('source-map-support').install();
+
 // reload
 let errorList = [];
 let reloadTimeoutId;
@@ -42,7 +44,8 @@ function registerPathClass (path) {
   catch(err) {
     errorList.push(path);
     unregisterPathClass(path);
-    console.error(err);
+    // console.error(err);
+    console.log(err);
   } 
 }
 
@@ -121,13 +124,18 @@ window.qp = {
 
     const Chokidar = require('chokidar');
 
-    watcher = Chokidar.watch(Path.join(_Settings.assetPath, '**/*.js'), {
+    let pattern = require('../../types').map(extname => {
+      return Path.join(_Settings.assetPath, '**/*' + extname);
+    });
+
+    watcher = Chokidar.watch(pattern, {
       ignoreInitial: true
     });
     
     watcher.on('all', (event, path) => {
       let src = path;
       let dst = Path.join(_Settings.tmpScriptPath, 'assets', Path.relative(_Settings.assetPath, path));
+      dst = Path.join(Path.dirname(dst), Path.basenameNoExt(dst) + '.js');
 
       if (event === 'change') {
         ipcRenderer.send('generate-src-file', src, dst);

@@ -7,6 +7,7 @@ const Jade = require('jade');
 const Globby = require('globby');
 const Fs = require('fire-fs');
 const Del = require('del');
+const Async = require('async');
 
 const UuidUtils = require( Editor.url('app://editor/share/editor-utils/uuid-utils') );
 
@@ -42,9 +43,9 @@ function generateHtml () {
   Fs.writeFileSync(Path.join(__dirname, 'panel/index.html'), content);
 }
 
-function generateContent () {
+function generateContent (cb) {
   generateHtml();
-  generateSrcFiles();
+  generateSrcFiles(cb);
 }
 
 function url (path) {
@@ -55,48 +56,118 @@ function url (path) {
   });
 }
 
-function getUuidAndScriptName (path, callback) {
-    var name = Path.basenameNoExt(path);
-    var uuid = Editor.assetdb.fspathToUuid(path);
-    return callback(uuid || '', name);
+let compiledJsMap = {};
+
+function transformJs (src, dest, uuid, reimportScript, time, cb) {
+  let meta = Editor.assetdb.loadMetaByUuid(uuid);
+
+  if (!meta) {
+    return cb(new Error(`load meta for [${src}] failed`));
+  }
+
+  function copyDests (cb) {
+    let dstDir = Path.dirname(dest);
+
+    if (meta.isPlugin) {
+      Fs.copySync(src, dest);
+      return cb();
+    }
+
+    let dests = [
+      Editor.assetdb._uuidToImportPathNoExt( meta.uuid ) + '.js',
+      Editor.assetdb._uuidToImportPathNoExt( meta.uuid ) + '.js.map'
+    ];
+
+    dests.forEach(importPath => {
+      let basenameNoExt = Path.basenameNoExt(src);
+      let extname = Path.extname(src);
+      let importExtname = importPath.substr(importPath.indexOf('.'), importPath.length);
+
+      if (importExtname === '.js.map') {
+        dest = Path.join(dstDir, `${basenameNoExt}-${time}.js.map`);
+        let contents = Fs.readFileSync(importPath, 'utf8');
+
+        contents = contents.replace(/"sources":[\ ]*\[[\n|\ ]*[\S]*[\n|\ ]*\],/, `"sources":["${basenameNoExt}-${time}${extname}"],`);
+        // contents = contents.replace(/"sources":[\ ]*\[[\n|\ ]*[\S]*[\n|\ ]*\],/, `"sources":["${Path.basename(src)}"],`);
+
+        Fs.writeFileSync(dest, contents);
+      }
+      else {
+        dest = Path.join(dstDir, basenameNoExt + importExtname);
+        Fs.copySync( importPath,  dest );
+      }
+    });
+
+    cb();
+  }
+
+  if (!reimportScript) {
+    copyDests( cb );
+  }
+  else {
+    meta.import(src, (err) => {
+      if (err) return cb(err);
+      copyDests( cb );
+    });
+  }
 }
 
-function addMetaData (src, dst) {
-    var footer = "\nqp._RFpop();";
-    var newLineFooter = '\n' + footer;
+function addMetaData (src, dst, reimportScript, cb) {
+    let name = Path.basenameNoExt(dst);
+    let uuid = Editor.assetdb.fspathToUuid(src) || '';
 
-    // read uuid
-    getUuidAndScriptName(src, function (uuid, name) {
-        var contents = Fs.readFileSync(src, 'utf8');
-        var header;
-        if (uuid) {
-            uuid = UuidUtils.compressUuid(uuid);
-            header = `"use strict";` +
-                     `qp._RFpush(module, '${uuid}', '${name}');`;
-        }
-        else {
-            header = `"use strict";` +
-                     `qp._RFpush(module, '${name}');`;
-        }
-        var endsWithNewLine = (contents[contents.length - 1] === '\n' || contents[contents.length - 1] === '\r');
-        contents = header + contents + (endsWithNewLine ? footer : newLineFooter);
-       
-        Fs.ensureDirSync(Path.dirname(dst));
-        Fs.writeFileSync(dst, contents);
+    if (!compiledJsMap[src]) {
+      compiledJsMap[src] = 1;
+    }
+    let time = compiledJsMap[src]++;
+
+    transformJs(src, dst, uuid, reimportScript, time, (err) => {
+      if (err) return err;
+
+      let contents = Fs.readFileSync(dst, 'utf8');
+      let header;
+      if (uuid) {
+          uuid = UuidUtils.compressUuid(uuid);
+          header = `"use strict";` +
+                   `qp._RFpush(module, '${uuid}', '${name}');`;
+      }
+      else {
+          header = `"use strict";` +
+                   `qp._RFpush(module, '${name}');`;
+      }
+      let endsWithNewLine = (contents[contents.length - 1] === '\n' || contents[contents.length - 1] === '\r');
+
+      let footer = "\nqp._RFpop();";
+      footer += `\n//# sourceMappingURL=${Path.basenameNoExt(dst)}-${time}.js.map`;
+
+      let newLineFooter = '\n' + footer;
+      contents = header + contents + (endsWithNewLine ? footer : newLineFooter);
+     
+      Fs.ensureDirSync(Path.dirname(dst));
+      Fs.writeFileSync(dst, contents);
+
+      cb ();
     });
 }
 
-function generateSrcFiles () {
+function generateSrcFiles (cb) {
   Del.sync(tmpScriptPath, {force: true});
-  let pattern = Path.join(assetPath, '**/*.js');
 
-  Globby.sync(pattern)
-    .forEach(path => {
+  let pattern = require('./types').map(extname => {
+    return Path.join(assetPath, '**/*' + extname);
+  });
+
+  Globby(pattern, (err, paths) => {
+    Async.forEach(paths, (path, done) => {
       path = Path.normalize(path);
       let dst = Path.join(tmpScriptPath, 'assets', Path.relative(assetPath, path));
-      addMetaData(path, dst);
-    }
-  );
+      dst = Path.join(Path.dirname(dst), Path.basenameNoExt(dst) + '.js');
+      addMetaData(path, dst, false, done);
+    }, err => {
+      if (err) Editor.error(err);
+      cb ();
+    });
+  });
 }
 
 let win;
@@ -125,26 +196,29 @@ function openWindow () {
       win = null;
   });
 
-  generateContent();
-  win.loadURL( url(Path.join(__dirname, 'panel/index.html')) );
+  generateContent(() => {
+    win.loadURL( url(Path.join(__dirname, 'panel/index.html')) );
+  });
 }
-
-ipcMain.on('generate-src-file', (event, src, dst) => {
-  addMetaData(src, dst);
-  event.sender.send('generate-src-file-complete', src, dst);
-});
-
-ipcMain.on('app:reload-on-device', () => {
-  if (win) {
-    win.webContents.send('reload-scene');
-  }
-});
 
 Editor.App.on('quit', function () {
   if (win) {
     win.close();
   }
 });
+
+function onGenerateSrcFile (event, src, dst) {
+  addMetaData(src, dst, true, (err) => {
+    if (err) Editor.error(err);
+    event.sender.send('generate-src-file-complete', src, dst);
+  });
+}
+
+function onAppReloadOnDevice () {
+  if (win) {
+    win.webContents.send('reload-scene');
+  }
+}
 
 module.exports = {
   load () {
@@ -153,9 +227,14 @@ module.exports = {
       label: 'quick-preview',
       action: 'Panel Load'
     }, null);
+
+    ipcMain.on('generate-src-file', onGenerateSrcFile);
+    ipcMain.on('app:reload-on-device', onAppReloadOnDevice);
   },
 
   unload () {
+    ipcMain.removeListener('generate-src-file', onGenerateSrcFile);
+    ipcMain.removeListener('app:reload-on-device', onAppReloadOnDevice);
   },
 
   messages: {
