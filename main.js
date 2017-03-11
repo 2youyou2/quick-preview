@@ -85,10 +85,10 @@ function transformJs (src, dest, uuid, reimportScript, time, cb) {
 
       if (importExtname === '.js.map') {
         dest = Path.join(dstDir, `${basenameNoExt}-${time}.js.map`);
-        let contents = Fs.readFileSync(importPath, 'utf8');
-
-        contents = contents.replace(/"sources":[\ ]*\[[\n|\ ]*[\S]*[\n|\ ]*\],/, `"sources":["${basenameNoExt}-${time}${extname}"],`);
-        // contents = contents.replace(/"sources":[\ ]*\[[\n|\ ]*[\S]*[\n|\ ]*\],/, `"sources":["${Path.basename(src)}"],`);
+        let contents = JSON.parse( Fs.readFileSync(importPath, 'utf8') );
+        
+        contents.sources = [`${basenameNoExt}-${time}${extname}`];
+        contents = JSON.stringify(contents);
 
         Fs.writeFileSync(dest, contents);
       }
@@ -139,6 +139,18 @@ function addMetaData (src, dst, reimportScript, cb) {
 
       let footer = "\nqp._RFpop();";
       footer += `\n//# sourceMappingURL=${Path.basenameNoExt(dst)}-${time}.js.map`;
+
+      // let mapPath = dst + '.map';
+      // if (Fs.existsSync(mapPath)) {
+      //   let json = Fs.readFileSync(mapPath, 'utf8');
+
+      //   let convert = require('convert-source-map');
+      //   let mapping = convert.fromJSON(json)
+      //     .setProperty('sources', [`${Path.basenameNoExt(src)}-${time}${Path.extname(src)}`])
+      //     .toComment();
+
+      //   footer += mapping;
+      // }
 
       let newLineFooter = '\n' + footer;
       contents = header + contents + (endsWithNewLine ? footer : newLineFooter);
