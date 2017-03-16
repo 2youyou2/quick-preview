@@ -122,7 +122,7 @@ function addMetaData (src, dst, reimportScript, cb) {
     let time = compiledJsMap[src]++;
 
     transformJs(src, dst, uuid, reimportScript, time, (err) => {
-      if (err) return err;
+      if (err) return cb(err);
 
       let contents = Fs.readFileSync(dst, 'utf8');
       let header;
