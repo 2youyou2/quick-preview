@@ -162,6 +162,10 @@
         inputSetFPS.value = '60';
     }
 
+    function isShowFPS() {
+        return Array.prototype.indexOf.call(btnShowFPS.classList, 'checked') !== -1;
+    }
+
     initPreviewOptions();
 
     window.onload = function () {
@@ -254,7 +258,6 @@
         });
 
 
-
         // init engine
         // =======================
 
@@ -266,7 +269,7 @@
             id: canvas,
             renderMode: parseInt(optsRenderMode.value),
             debugMode: parseInt(optsDebugMode.value),
-            showFPS: Array.prototype.indexOf.call(btnShowFPS.classList, 'checked') !== -1,
+            showFPS: isShowFPS(),
             frameRate: parseInt(inputSetFPS.value),
         };
 
@@ -375,8 +378,8 @@
                                 var scene = sceneAsset.scene;
                                 scene._name = sceneAsset._name;
                                 cc.director.runSceneImmediate(scene, function () {
-                                    // play game
                                     cc.game.resume();
+                                    cc.director.setDisplayStats( isShowFPS() );
                                 });
 
                                 cc.loader.onProgress = null;
@@ -392,13 +395,6 @@
             var Path = require('path');
             
             require(Path.join(__dirname, 'scripts/engine.js'));
-
-            // UC browser on many android devices have performance issue with retina display
-            if (cc.sys.os !== cc.sys.OS_ANDROID || cc.sys.browserType !== cc.sys.BROWSER_TYPE_UC) {
-                cc.view.enableRetina(true);
-            }
-            
-            cc.director.setDisplayStats(true);
 
             reloadScene();
 
