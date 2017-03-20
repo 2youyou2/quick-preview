@@ -159,7 +159,7 @@
         optsRenderMode.value = getCookie('renderMode') || '0';
         optsDebugMode.value = getCookie('debugMode') || '1';
         setCSSChecked(btnShowFPS, getCookie('showFPS') === 'true');
-        inputSetFPS.value = '60';
+        inputSetFPS.value = getCookie('frameRate') || '60';
     }
 
     function isShowFPS() {
@@ -255,6 +255,7 @@
                 inputSetFPS.value = fps.toString();
             }
             cc.game.setFrameRate(fps);
+            setCookie('frameRate', fps);
         });
 
 
