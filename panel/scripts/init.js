@@ -3,6 +3,8 @@
 const ipcRenderer = require('electron').ipcRenderer;
 const Path = require('fire-path');
 const Globby = require('globby');
+const Fs = require('fire-fs');
+const Del = require('del');
 
 // reload
 let errorList = [];
@@ -144,6 +146,15 @@ window.qp = {
       }
       else if (event === 'unlink') {
         unregisterPathClass(dst);
+
+        if (Fs.existsSync(dst)) {
+          try {
+            Del.sync(dst, {force: true});
+          }
+          catch(err) {
+            Editor.error(err);
+          }
+        }
       }
     });
   },
