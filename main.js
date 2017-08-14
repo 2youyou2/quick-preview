@@ -81,7 +81,9 @@ function transformJs (src, dest, uuid, reimportScript, time, cb) {
     dests.forEach(importPath => {
       let basenameNoExt = Path.basenameNoExt(src);
       let extname = Path.extname(src);
-      let importExtname = importPath.substr(importPath.indexOf('.'), importPath.length);
+
+      let importBasename = Path.basename(importPath);
+      let importExtname = importBasename.substr(importBasename.indexOf('.'), importBasename.length);
 
       if (importExtname === '.js.map') {
         dest = Path.join(dstDir, `${basenameNoExt}-${time}.js.map`);
