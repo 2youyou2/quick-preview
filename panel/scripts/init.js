@@ -225,12 +225,12 @@ window.qp = {
     }
     stack.push(module);
 
-    cc._RFpush.apply(cc._RFpush, arguments);
+    cc._RF.push.apply(cc._RFpush, arguments);
   },
 
   _RFpop: function (module) {
     this._moduleStack.pop();
 
-    cc._RFpop.apply(cc._RFpush, arguments);
+    cc._RF.pop.apply(cc._RFpush, arguments);
   }
 };
