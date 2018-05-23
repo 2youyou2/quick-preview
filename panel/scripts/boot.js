@@ -329,8 +329,15 @@
 
                     // clear loader cache
                     // cc.loader.clear();
+                    
                     cc.director.reset();
                     cc.loader.releaseAll();
+                    
+                    let device = cc.renderer.device;
+                    if (device && device._current && device._next) {
+                        device._current = new device._current.constructor(device);
+                        device._next = new device._next.constructor(device);
+                    }
 
                     // clear persist root nodes
                     let nodes = cc.game._persistRootNodes;
