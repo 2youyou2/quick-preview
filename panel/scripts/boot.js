@@ -166,6 +166,24 @@
         return Array.prototype.indexOf.call(btnShowFPS.classList, 'checked') !== -1;
     }
 
+    function setDisplayStats (display) {
+        if (cc.debug && cc.debug.setDisplayStats) {
+            cc.debug.setDisplayStats(display);
+        }
+        else {
+            cc.director.setDisplayStats(display);
+        }
+    }
+
+    function isDisplayStats () {
+        if (cc.debug && cc.debug.isDisplayStats) {
+            return cc.debug.isDisplayStats();
+        }
+        else {
+            return cc.director.isDisplayStats();
+        }
+    }
+
     initPreviewOptions();
 
     window.onload = function () {
@@ -242,7 +260,7 @@
         // init show fps, true by default
         btnShowFPS.addEventListener('click', function () {
             var show = !cc.director.isDisplayStats();
-            cc.director.setDisplayStats(show);
+            setDisplayStats(show);
             setCSSChecked(btnShowFPS, show);
             setCookie('showFPS', show.toString());
         });
@@ -387,7 +405,7 @@
                                 scene._name = sceneAsset._name;
                                 cc.director.runSceneImmediate(scene, function () {
                                     cc.game.resume();
-                                    cc.director.setDisplayStats( isShowFPS() );
+                                    setDisplayStats( isShowFPS() );
                                 });
 
                                 cc.loader.onProgress = null;
