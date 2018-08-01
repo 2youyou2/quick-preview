@@ -259,7 +259,7 @@
 
         // init show fps, true by default
         btnShowFPS.addEventListener('click', function () {
-            var show = !cc.director.isDisplayStats();
+            var show = cc.director.isDisplayStats ? !cc.director.isDisplayStats() : !cc.debug.isDisplayStats();
             setDisplayStats(show);
             setCSSChecked(btnShowFPS, show);
             setCookie('showFPS', show.toString());
