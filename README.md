@@ -1,3 +1,5 @@
+# Deprecated
+
 # quick-preview
 Quick Preview Plugin for CocosCreator 1.4+
 
